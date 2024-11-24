@@ -6,17 +6,55 @@ const userData = {
     message: null
 };
 
-const createMessageElement = (content, classes) => {
+// API Setup 
+const APT_KEY = "AIzaSyBY6ZZnNmw6OOYXiPSIutQzFPSGkkHVCKM";
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${APT_KEY}`;
+
+
+// Create message element with dynamic classes and return it 
+const createMessageElement = (content, ...classes) => {
     const div = document.createElement("div");
-    div.classList.add("message", classes);
+    div.classList.add("message", ...classes);
     div.innerHTML = (content);
     return div;
 }
 
+// Genereate bot response form API
+const generateBotResponse = async(incomingMessageDiv) => {
+    const messageElement = incomingMessageDiv.querySelector(".message-text")
+    //API response option
+    const requestOptions = {
+        method: "POST",
+        headers: {"Content-Type" : "application/json"},
+        body: JSON.stringify({
+            contents: [{
+                parts: [{text: userData.message}]
+            }]
+        })
+    }
+   try{
+      // Fetch bot responce form API
+      const response = await fetch(API_URL, requestOptions);
+      const data = await response.json();
+      if(!response.ok) throw new  Error(data.error.message)
+      
+       //Extract and display bot response 
+      const apiResponseText = data.candidates[0].content.parts[0].text.replace(/\*\*(.*?)\*\**/g, "$1").trim();
+      messageElement.innerText = apiResponseText; 
+   }catch(error){
+      console.log(error);    
+   }finally{
+    incomingMessageDiv.classList.remove("thinking");
+   }
+}
+
+//Handle outgoing user message 
 const handleOutgoingMessage = (e) => {
     e.preventDefault();
     userData.message = messageInput.value.trim()
     messageInput.value = "";
+
+    // Create and display user message
     const messageContent = `<div class="message-text"></div>`;
 
     const outgoingMessageDiv = createMessageElement(messageContent, "user-message");
@@ -34,9 +72,9 @@ const handleOutgoingMessage = (e) => {
                         <div class="dot"></div>
                     </div>
                 </div>`;
-        const incomingMessageDiv = createMessageElement(messageContent, "bot-message"); 
+        const incomingMessageDiv = createMessageElement(messageContent, "bot-message", "thinking"); 
         chatbody.appendChild(incomingMessageDiv);
-        
+        generateBotResponse(incomingMessageDiv);
     }, 600);
 }    
 
