@@ -16,6 +16,27 @@ body {
   background: linear-gradient(#eeeeeeff, #c8c7ff);
 }
 
+#chatbot-toggler{
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  border: none;
+  height: 2.5rem;
+  width: 2.5rem;
+  cursor: pointer;
+  border-radius: 50%;
+  background: #5350C4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#chatbot-toggler span{
+  color: #fff;
+  position: absolute;
+}
+
+
 .chatbot-popup {
   position: relative;
   width: 23rem;
@@ -31,7 +52,7 @@ body {
   align-items: center;
   justify-content: space-between;
   background: #5350c4;
-  padding: 0.9rem 1.3rem;
+  padding: 0.6rem 1.2rem;
 }
 
 .chat-header .header-info {
@@ -82,6 +103,8 @@ body {
     margin-bottom: 5rem;
     overflow-y: auto;
     font-size: 0.9rem;
+    scrollbar-width: thin;
+    scrollbar-color: #ccccf5 transparent;
 }
 
 .chat-body .message{
@@ -112,6 +135,7 @@ body {
   background: #F2F2FF;
 
 }
+
 .chat-body .bot-message.thinking .message-text {
   padding: 0.1rem 0.7rem;
 }
@@ -124,6 +148,12 @@ body {
   color: #fff;
   border-radius: 0.7rem 0.7rem 0.1rem 0.7rem;
 }
+.chat-body .user-message .attachment{
+  width: 50%;
+  margin-top: -7px;
+  border-radius: 13px 3px 13px 13px;
+}
+
 .chat-body .bot-message .thinking-indicator{
   display: flex;
   gap: 0.2rem;
@@ -174,6 +204,7 @@ body {
 
 .chat-footer .chat-form{
   display: flex;
+  position: relative;
   background: #fff;
   align-items: center;
   outline: 1px solid #CCCCE5;
@@ -231,4 +262,52 @@ body {
 }
 .chat-form .chat-controls button:hover{
   background: #f1f1ff;
+}
+.chat-form .file-upload-wrapper{
+  width: 1.7rem;
+  height: 1.7rem; 
+  position: relative;
+}
+
+.chat-form .file-upload-wrapper :where(img, button){
+  position: absolute;
+}
+
+.chat-form .file-upload-wrapper img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.chat-form .file-upload-wrapper #file-cancel{ 
+    color: #ff0000;
+    background: #fff;
+}
+
+.chat-form .file-upload-wrapper :where(img, #file-cancel), 
+.chat-form .file-upload-wrapper.file-uploaded #file-upload{
+  padding-left: 2px;
+  display: none;
+}
+
+.chat-form .file-upload-wrapper.file-uploaded img,
+.chat-form .file-upload-wrapper.file-uploaded:hover #file-cancel{
+  padding-left: 2px;
+  display: block;
+}
+
+em-emoji-picker {
+  position: absolute;
+  left: 50%;
+  top: -15.1rem;
+  width: 100%;
+  max-width: 18rem;
+  max-height: 15rem;
+  visibility: hidden;
+  transform: translateX(-50%);
+}
+
+body.show-emoji-picker em-emoji-picker {
+  visibility: visible ;
 }

@@ -1,9 +1,16 @@
 const chatbody = document.querySelector(".chat-body");
 const messageInput = document.querySelector(".message-input");
 const sendMessageBtn = document.querySelector("#send-message");
+const fileInput = document.querySelector("#file-input");
+const fileUploaderWrapper = document.querySelector(".file-upload-wrapper");
+const fileCancelBtn = document.querySelector("#file-cancel");
 
 const userData = {
-    message: null
+    message: null,
+    file: {
+        data: null,
+        mime_type: null
+    }
 };
 
 // API Setup 
@@ -28,7 +35,7 @@ const generateBotResponse = async(incomingMessageDiv) => {
         headers: {"Content-Type" : "application/json"},
         body: JSON.stringify({
             contents: [{
-                parts: [{text: userData.message}]
+                parts: [{text: userData.message}, ...(userData.file.data ? [{inline_data:userData.file }] : [])]
             }]
         })
     }
@@ -41,10 +48,16 @@ const generateBotResponse = async(incomingMessageDiv) => {
        //Extract and display bot response 
       const apiResponseText = data.candidates[0].content.parts[0].text.replace(/\*\*(.*?)\*\**/g, "$1").trim();
       messageElement.innerText = apiResponseText; 
-   }catch(error){
-      console.log(error);    
-   }finally{
-    incomingMessageDiv.classList.remove("thinking");
+    }catch(error){
+        //Handle error in API response
+        console.log(error);    
+        messageElement.innerText = error.message; 
+        messageElement.style.color = "#ff0000";
+    }finally{
+        // Reset user file data, removing thinking indicator and scroll chat to bottom
+        userData.file={};
+        incomingMessageDiv.classList.remove("thinking");
+        chatbody.scrollTo({ top: chatbody.scrollHeight, behavior: "smooth"});
    }
 }
 
@@ -55,11 +68,13 @@ const handleOutgoingMessage = (e) => {
     messageInput.value = "";
 
     // Create and display user message
-    const messageContent = `<div class="message-text"></div>`;
+    const messageContent = `<div class="message-text"></div>
+    ${userData.file.data ? `<img src="data:${userData.file.mime_type}; base64,${userData.file.data}" class="attachment" />` : ""}`;
 
     const outgoingMessageDiv = createMessageElement(messageContent, "user-message");
     outgoingMessageDiv.querySelector(".message-text").innerText = userData.message;
     chatbody.appendChild(outgoingMessageDiv);
+    chatbody.scrollTo({ top: chatbody.scrollHeight, behavior: "smooth"});
    
     setTimeout(() => {
         const messageContent = `<svg class="bot-avatar" xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 1024 1024">
@@ -74,6 +89,7 @@ const handleOutgoingMessage = (e) => {
                 </div>`;
         const incomingMessageDiv = createMessageElement(messageContent, "bot-message", "thinking"); 
         chatbody.appendChild(incomingMessageDiv);
+        chatbody.scrollTo({ top: chatbody.scrollHeight, behavior: "smooth"});
         generateBotResponse(incomingMessageDiv);
     }, 600);
 }    
@@ -85,4 +101,58 @@ messageInput.addEventListener("keydown", (e)=>{
     }
 })
 
-sendMessageBtn.addEventListener("click", (e)=>handleOutgoingMessage(e))
+// Handle file input change and preview selected file
+fileInput.addEventListener("change", ()=>{
+    const file = fileInput.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) =>{
+        fileUploaderWrapper.querySelector("img").src = e.target.result;
+        fileUploaderWrapper.classList.add("file-uploaded"); 
+        const base64String = e.target.result.split(",")[1];
+
+
+        // Store file data in userData
+        userData.file = {
+            data: base64String,
+            mime_type: file.type
+        }
+        
+        fileInput.value = "";
+    }
+
+    reader.readAsDataURL(file);
+    
+});
+
+//Cancel file upload 
+fileCancelBtn.addEventListener("click", ()=>{
+    userData.file = {};
+    fileUploaderWrapper.classList.remove("file-uploaded");
+});
+
+// Initialize emoji picker
+const picker = new EmojiMart.Picker({
+    theme: "light",
+    skinTonePosition: "none",
+    previewPosition: "none",
+    onEmojiSelect: (emoji)=>{
+       const{ selectionStart: start, selectionEnd: end} = messageInput;
+       messageInput.setRangeText(emoji.native, start, end, "end");
+       messageInput.focus();
+    },
+    onClickOutside: (e)=>{
+        if(e.target.id === "emoji-picker"){
+            document.body.classList.toggle("show-emoji-picker");
+        }
+        else{
+            document.body.classList.remove("show-emoji-picker");
+
+        }
+    }
+});
+
+document.querySelector(".chat-form").appendChild(picker);
+
+sendMessageBtn.addEventListener("click", (e)=>handleOutgoingMessage(e));
+document.querySelector("#file-upload").addEventListener("click", ()=> fileInput.click());
